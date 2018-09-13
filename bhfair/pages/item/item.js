@@ -278,14 +278,17 @@ Page({
           duration: 2000
         })
 
-        wx.BaaS.invokeFunction('sendmsg', {
-          id: this.data.receiver,
-          product_id: this.data.item_info.id,
-          template_id: this.data.reply_template_id,
-          content: this.data.message[this.data.message.length - 1].content,
-          nick_name: this.data.message[this.data.message.length - 1].nick_name
-        }).then(res => {console.log('推送结果',res,)})
-
+        //如果用户回复自己则不推送
+        if(app.globalData.userInfo.id!=this.data.receiver){
+          wx.BaaS.invokeFunction('sendmsg', {
+            id: this.data.receiver,   //接收者id
+            product_id: this.data.item_info.id,
+            template_id: this.data.reply_template_id,
+            content: this.data.message[this.data.message.length - 1].content,
+            nick_name: this.data.message[this.data.message.length - 1].nick_name
+          }).then(res => {console.log('推送结果',res,)})
+        }
+        
         this.setData({
           message: temp_message,
           return_message: "",
@@ -360,14 +363,16 @@ Page({
           duration: 2000
         })
 
-        //这里发送消息推送
-        wx.BaaS.invokeFunction('sendmsg', {
-          id: this.data.item_info.created_by,
-          product_id: this.data.item_info.id,
-          template_id: this.data.message_template_id,
-          content: this.data.message[this.data.message.length - 1].content,
-          nick_name: this.data.message[this.data.message.length - 1].nick_name
-        }).then(res => {console.log('推送结果', res)})
+        //这里发送消息推送,如果是卖家留言则不推送
+        if(app.globalData.userInfo.id!=this.data.item_info.created_by){
+          wx.BaaS.invokeFunction('sendmsg', {
+            id: this.data.item_info.created_by,
+            product_id: this.data.item_info.id,
+            template_id: this.data.message_template_id,
+            content: this.data.message[this.data.message.length - 1].content,
+            nick_name: this.data.message[this.data.message.length - 1].nick_name
+          }).then(res => {console.log('推送结果', res)})
+        }
       });   
     }
     else if (app.globalData.hasuserinfo == false){
