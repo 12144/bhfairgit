@@ -22,34 +22,6 @@ Page({
     item_price:null,
     item_dsp:""
   },
-  //显示列表
-  showlist:function(){
-    var self=this
-    if(self.data.imgs.length==9){
-      wx.showToast({
-        title: '最多只能上传9张图片',
-        icon:'none',
-        duration:2000
-      })
-    }
-    else{
-      wx.chooseImage({
-        count: 9, // 默认9
-        sizeType: ['original', 'compressed'], // 可以指定是原图还是压缩图，默认二者都有
-        sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有
-        success: function (res) {
-          // 返回选定照片的本地文件路径列表，tempFilePath可以作为img标签的src属性显示图片
-          var tempFilePaths = res.tempFilePaths
-          var temp_imgs = self.data.imgs
-          for (var i = 0; i < tempFilePaths.length; i++)
-            temp_imgs.push(tempFilePaths[i])
-
-          self.setData({ imgs: temp_imgs })
-          console.log(temp_imgs)
-        }
-      })
-    }
-  },
   //设置title
   settitle: function (e) {
     this.setData({
@@ -140,6 +112,33 @@ Page({
       }
     })
   },
+  //显示列表
+  showlist: function () {
+    var self = this
+    if (self.data.imgs.length == 9) {
+      wx.showToast({
+        title: '最多只能上传9张图片',
+        icon: 'none',
+        duration: 2000
+      })
+    }
+    else {
+      wx.chooseImage({
+        count: 9, // 默认9
+        sizeType: ['original', 'compressed'], // 可以指定是原图还是压缩图，默认二者都有
+        sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有
+        success: function (res) {
+          // 返回选定照片的本地文件路径列表，tempFilePath可以作为img标签的src属性显示图片
+          var tempFilePaths = res.tempFilePaths //本地图片列表
+          var temp_imgs = self.data.imgs  //原来的图片
+          for (var i = 0; i < tempFilePaths.length; i++)
+            temp_imgs.push(tempFilePaths[i])  //加到图片列表中
+
+          self.setData({ imgs: temp_imgs })
+        }
+      })
+    }
+  },
   //提交表单
   submit_handler:function(e){
     wx.showLoading({
@@ -150,7 +149,7 @@ Page({
     var tableID = app.globalData.product_tableID//表格id
     var myfile = new wx.BaaS.File()  //实例化一个对象
     var item = this.data
-    var filepath = { filePath: "" } //图片本地地址
+
     var item_info = {
       pname: item.item_title,
       types: item.item_type,
@@ -166,8 +165,8 @@ Page({
     }
 
     for (var i = 0; i < item.imgs.length; i++) {
-      filepath.filePath = item.imgs[i]
-      console.log('1',filepath)
+      let filepath = { filePath: item.imgs[i] } //图片本地地址
+    
       myfile.upload(filepath).then(res => {
         item_info.photos.push(res.data.path)//获得图片的云地址
         if (item_info.photos.length == item.imgs.length) {
