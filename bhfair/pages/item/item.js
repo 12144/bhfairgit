@@ -11,7 +11,6 @@ Page({
     message_template_id: "ecDKL9Mvd0oZfq5R47wYS4OWNlwsknoSp6YTpyR6R_w",
     codersrc:null,
     form_id:null,
-    access_token:"",
     return_message:"",
     user_info_id:null,
     item_info: {
@@ -28,7 +27,6 @@ Page({
       campus:"",//校区
       openid:"",//卖家的openid
       created_by:0,
-      //后续浏览次数，喜欢，评论。。。
     },//商品信息
     message:[{
       id: 0,
@@ -103,7 +101,7 @@ Page({
   },
   //设置formid
   formSubmit: function (e) {
-    if(app.globalData.userInfo.openid != ""){ 
+    if (app.globalData.userInfo.openid != "" && e.detail.formId !="the formId is a mock one"){ 
       console.log('form发生了submit事件，携带数据为：', e.detail.formId)
       this.setData({
         form_id: e.detail.formId,
@@ -112,7 +110,7 @@ Page({
       let Product = new wx.BaaS.TableObject(tableID)
       let product = Product.create()
 
-      // 设置方式一
+      // 设置formId
       let data = {
         formId: this.data.form_id,
         openid:app.globalData.userInfo.openid
@@ -250,11 +248,8 @@ Page({
         mask: true,
       })
       //修改本地数据并且上传
-      let tableID = 50161;
-      let MyTableObject = new wx.BaaS.TableObject(tableID);
-      let MyRecord = MyTableObject.create();
       var temp_message = this.data.message
-      temp_message.push({
+      var temp = {
         created_at: this.todata(this.getdate()),
         product_id: this.data.item_info.id,
         content: this.data.return_message,
@@ -262,66 +257,44 @@ Page({
         avatar: app.globalData.userInfo.avatarUrl,
         nick_name: app.globalData.userInfo.nickName,
         receiver: this.data.receiver,
-        openid:app.globalData.userInfo.openid,
+        openid: app.globalData.userInfo.openid,
         rec_nickname: this.data.rec_nickname,
         created_by: app.globalData.userInfo.id,
         id: 0,
-      })
-      console.log('留言list',temp_message)
-      this.setData({
-        message: temp_message
-      }),
-      MyRecord.set(this.data.message[this.data.message.length - 1])
-      console.log("新增数据项设置完成,为")
-      console.log(this.data.message[this.data.message.length - 1])
-      MyRecord.save().then(res => {
+      }
+
+      let tableID = 50161;
+      let MyTableObject = new wx.BaaS.TableObject(tableID);
+      let MyRecord = MyTableObject.create();
+
+      MyRecord.set(temp).save().then(res => {
+        temp.id = res.data.id
+        temp_message.push(temp)
+       
         wx.hideLoading()
         wx.showToast({
-          title: '留言成功',
+          title: '回复成功',
           icon: 'success',
           duration: 2000
         })
 
-        console.log("开始发送推送")     
-        var id = this.data.receiver
-        let access_token_table_ID = 50924
-        let query_access = new wx.BaaS.Query()
-        query_access.compare('created_by', '=', 67820503)
-        let message = new wx.BaaS.TableObject(access_token_table_ID)
-        message.setQuery(query_access).find().then(data => {
-          this.setData({
-            access_token: data.data.objects[0].access_token,
-          })
-          this.service_info({
-            id: id,
-            product_id: this.data.item_info.id,
-            template_id: this.data.reply_template_id,
-            content: this.data.message[this.data.message.length - 1].content,
-            nick_name: this.data.message[this.data.message.length - 1].nick_name
-          })//被回复者
-          console.log("access_token:", this.data.access_token)
-        }, error => {
-        });// 获取access_token
-        console.log("access_token:", this.data.access_token)
-        console.log("刷新data中")
+        wx.BaaS.invokeFunction('sendmsg', {
+          id: this.data.receiver,
+          product_id: this.data.item_info.id,
+          template_id: this.data.reply_template_id,
+          content: this.data.message[this.data.message.length - 1].content,
+          nick_name: this.data.message[this.data.message.length - 1].nick_name
+        }).then(res => {console.log('推送结果',res,)})
+
         this.setData({
-          'this.data.message': this.data.message,
+          message: temp_message,
           return_message: "",
           rec_nickname: "",
           receiver: 0,
         })
-      }, err => {
-        console.log("上传失败")
-        wx.hideLoading()
-        wx.showToast({
-          title: '留言失败',
-          icon: 'fail',
-          duration: 2000
-        })
-      })
+      });
     }
   },
-
   //更新本地输入
   setmessage: function (e) {
     this.setData({
@@ -338,69 +311,6 @@ Page({
     var D = date.getDate() < 10 ? '0' + date.getDate() : date.getDate();
     return(Y + M + D)
   },
-
-  service_info:function(event){
-    //需传入id,product_id,template_id,content,nick_name
-    console.log('e is', event, this.data.item_info.id)
-
-    // wx.BaaS.invokeFunction('sendmsg',event).then(res=>{
-    //   console.log('res is',res)
-    // })
-    // var self = this
-    // console.log("传入模板消息的数据为:",event)
-    // var access_token = this.data.access_token
-
-    // let table_id = 50899  //formid
-    // let query = new wx.BaaS.Query()
-    // query.compare('created_by', '=', event.id)
-    // let message = new wx.BaaS.TableObject(table_id)
-    // var handler = function(data, rty) {
-    //   console.log("formid list:", data)
-    //   let recordID = data.data.objects["0"].id
-    //   var form_id = data.data.objects["0"].formId
-    //   var openid = data.data.objects["0"].openid
-
-    //   wx.request({
-    //     method: "POST",
-    //     url: 'https://api.weixin.qq.com/cgi-bin/message/wxopen/template/send?access_token=' + access_token,
-    //     data: {
-    //       "template_id": event.template_id,
-    //       "touser": openid,
-    //       "form_id": form_id,
-    //       "page": "/pages/item/item?id=" + self.data.item_info.id,    //跳转的商品链接
-    //       "data": {
-    //         "keyword1": {
-    //           "value": event.content
-    //         },
-    //         "keyword2": {
-    //           "value": event.nick_name
-    //         }
-    //       }
-    //     },
-    //     success: function (res) {
-    //       console.log("access_token:", self.data.access_token)
-    //       console.log("send message successfully:", res)
-    //       if (res.data.errmsg != "ok" && rty == undefined) {
-    //         setTimeout(handler, 1000, data, 1)
-    //       }
-    //     },
-    //     fail: function (err) {
-    //       console.log("fail to send message:", err)
-    //     }
-    //   })//发送模板消息
-
-    //   message.delete(recordID).then(res => {
-    //     console.log("成功删除id：", recordID)
-    //     console.log(res)
-    //   }, err => {
-    //     console.log("删除id：", recordID, "失败")
-    //     console.log(err)
-    //   })
-
-    // }
-    // message.setQuery(query).find().then(handler);//form_id
-  },//发送推送
-
   //获取当前时间戳
   getdate: function (){
     var timestamp = Date.parse(new Date());
@@ -411,9 +321,7 @@ Page({
   //上传留言
   upload_message: function(e){
     //判断是否符合上传条件
-    if (this.data.input.length > 0 
-      && this.data.input.length <= 140 
-      && app.globalData.hasuserinfo == true){
+    if (this.data.input.length > 0 && this.data.input.length <= 140  && app.globalData.hasuserinfo == true){
       wx.showLoading({
         title: '处理中...',
         mask: true,
@@ -423,7 +331,7 @@ Page({
       let MyTableObject = new wx.BaaS.TableObject(tableID);
       let MyRecord = MyTableObject.create();
       var temp_message = this.data.message
-      temp_message.push({
+      var temp = {
         created_at: this.todata(this.getdate()),
         product_id: this.data.item_info.id,
         content: this.data.input,
@@ -432,64 +340,38 @@ Page({
         nick_name: app.globalData.userInfo.nickName,
         receiver: 0,
         rec_nickname: "",
-        openid:app.globalData.userInfo.openid,
+        openid: app.globalData.userInfo.openid,
         created_by: app.globalData.userInfo.id,
-        id:0,
-      })
-      this.setData({
-        message:temp_message,
-        input:"",
-      }),
-      MyRecord.set(this.data.message[this.data.message.length - 1])
-      console.log("新增数据项设置完成")
-      MyRecord.save().then(res => {
+        id: 0,
+      }
+  
+      MyRecord.set(temp).save().then(res => {
+        temp.id = res.data.id
+        temp_message.push(temp)
+        this.setData({
+          'this.data.message': temp_message,
+          input: "",
+        })
+
         wx.hideLoading()
         wx.showToast({
           title: '留言成功',
           icon: 'success',
           duration: 2000
         })
+
         //这里发送消息推送
-        console.log("卖家id：",this.data.item_info.created_by)
-        let access_token_table_ID = 50924
-        let query_access = new wx.BaaS.Query()
-        query_access.compare('created_by', '=', 67820503)
-        let message = new wx.BaaS.TableObject(access_token_table_ID)
-        message.setQuery(query_access).find().then(data => {
-          this.setData({
-            access_token: data.data.objects[0].access_token,
-          })
-          this.service_info({
-            id: this.data.item_info.created_by,
-            product_id: this.data.item_info.id,
-            template_id:this.data.message_template_id,
-            content: this.data.message[this.data.message.length - 1].content,
-            nick_name: this.data.message[this.data.message.length - 1].nick_name
-          })//给卖家
-          console.log("access_token:", this.data.access_token)
-        }, error => {
-        });// 获取access_token
-        
-        this.data.message[this.data.message.length - 1].id = res.data.id
-        this.setData({
-          'this.data.message':this.data.message,
-          input:"",
-        })
-      },err => {
-        console.log("上传留言失败")
-        wx.hideLoading()
-        wx.showToast({
-          title: '留言失败',
-          icon: 'fail',
-          duration: 2000
-        })
-      })
+        wx.BaaS.invokeFunction('sendmsg', {
+          id: this.data.item_info.created_by,
+          product_id: this.data.item_info.id,
+          template_id: this.data.message_template_id,
+          content: this.data.message[this.data.message.length - 1].content,
+          nick_name: this.data.message[this.data.message.length - 1].nick_name
+        }).then(res => {console.log('推送结果', res)})
+      });   
     }
     else if (app.globalData.hasuserinfo == false){
-      var self = this;
-      this.authorize(e)
-      //进入授权函数
-      
+      this.authorize(e) //进入授权函数
     }
     else if (this.data.input.length ==0){
       wx.showToast({
@@ -497,7 +379,6 @@ Page({
         icon: 'none',
         duration: 2000
       })
-      
     }
     else{
       console.log("请输入少于140字内容")
@@ -592,7 +473,6 @@ Page({
       })
       app.globalData.hasuserinfo = true
     }, res => {
-      // **res 有两种情况**：用户拒绝授权，res 包含基本用户信息：id、openid、unionid；其他类型的错误，如网络断开、请求超时等，将返回 Error 对象（详情见下方注解）
       console.log("fail to get user information");
     })
   },
