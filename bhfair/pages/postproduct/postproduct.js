@@ -155,6 +155,7 @@ Page({
       types: item.item_type,
       bargain: item.item_ifbrg,
       photos: [],
+      photosid:[],  //图片的id用于删除图片
       condition: item.item_cdt,
       amount:parseInt(item.item_amount),
       description: item.item_dsp,
@@ -169,6 +170,7 @@ Page({
     
       myfile.upload(filepath).then(res => {
         item_info.photos.push(res.data.path)//获得图片的云地址
+        item_info.photosid.push(res.data.file.id)
         if (item_info.photos.length == item.imgs.length) {
           var tableobject = new wx.BaaS.TableObject(tableID) //创建TableObject对象
           var record = tableobject.create()  //本地创建一条空记录

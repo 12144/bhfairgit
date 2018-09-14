@@ -38,26 +38,31 @@ Page({
           let tableobject = new wx.BaaS.TableObject(tableID)
           let recordID = self.data.items[id].id //表是商品列表所以id即为商品id
 
-          tableobject.delete(recordID).then(res => {
-            let temp = self.data.items
-            temp.splice(id, 1)
-            self.setData({
-              items: temp
+          tableobject.get(recordID).then(res=>{
+            let photosid=res.data.photosid    //要删除的图片的id
+            tableobject.delete(recordID).then(res => {
+              let temp = self.data.items
+              temp.splice(id, 1)
+              self.setData({
+                items: temp
+              })
+              wx.showToast({
+                title: '下架成功',
+                icon: 'success',
+                duration: 2000
+              })
+              // 将图片删除
+              let myfile = new wx.BaaS.File()
+              myfile.delete(photosid)
+            }, err => {
+              wx.showToast({
+                title: '下架失败',
+                icon: 'none',
+                duration: 2000
+              })
             })
-            wx.showToast({
-              title: '下架成功',
-              icon: 'success',
-              duration: 2000
-            })
-            console.log('删除成功')
-          }, err => {
-            wx.showToast({
-              title: '下架失败',
-              icon: 'none',
-              duration: 2000
-            })
-            console.log('删除失败')
           })
+          
         }
       }
     })

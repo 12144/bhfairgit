@@ -44,6 +44,72 @@ Page({
     receiver:0,
     rec_nickname:"",
   },
+  like: function (e) {
+    var self = this.data
+    if (!app.globalData.hasuserinfo) {//如果用户没登录
+      this.authorize(e)
+    }
+    else {
+      wx.showModal({
+        title: '',
+        content: '添加收藏',
+        success: function (res) {
+          if (res.confirm) {
+            let tableID = app.globalData.store_tableID //表
+            let tableobject = new wx.BaaS.TableObject(tableID)
+
+            //先查询是否已收藏
+            let query = new wx.BaaS.Query()
+            query.compare('storeby', '=', app.globalData.userInfo.openid)
+            query.compare('product_id', '=', self.item_info.id)
+
+            tableobject.setQuery(query).find().then(res => {
+              if (res.data.objects.length == 0) {     //如果查询结果为空，则收藏
+                let record = tableobject.create()
+
+                var data = {
+                  product_id: self.item_info.id,
+                  pname: self.item_info.title,
+                  types: self.item_info.sort,
+                  bargain: self.item_info.bargain,
+                  photos: self.item_info.images,
+                  amount: self.item_info.amount,
+                  description: self.item_info.description,
+                  seller_id: self.item_info.salerid,
+                  campus: self.item_info.campus,
+                  price: self.item_info.price,
+                  condition: self.item_info.condition,
+                  openid: self.item_info.openid,
+                  storeby: app.globalData.userInfo.openid
+                }
+                //更新表
+                record.set(data).save().then(res => {
+                  wx.showToast({
+                    title: '收藏成功',
+                    icon: 'success',
+                    duration: 2000
+                  })
+                }, err => {
+                  wx.showToast({
+                    title: '收藏失败',
+                    icon: 'none',
+                    duration: 2000
+                  })
+                })
+              }
+              else {
+                wx.showToast({
+                  title: '您已收藏',
+                  icon: 'none',
+                  duration: 2000
+                })
+              }
+            })
+          }
+        }
+      })
+    }
+  },
   /**
    * 生命周期函数--监听页面加载
    */
@@ -63,7 +129,7 @@ Page({
             item_info:{
               id: itemdata.id,
               title: itemdata.pname,
-              sort: itemdata.type,
+              sort: itemdata.types,
               price: itemdata.price,
               bargain: itemdata.bargain == 1 ? "是" : "否",
               condition: itemdata.condition,
@@ -73,6 +139,7 @@ Page({
               salerid: itemdata.seller_id,
               campus: itemdata.campus,
               created_by: itemdata.created_by,
+              openid:itemdata.openid
             }
           })
         this.getcodesrc(res.data.seller_id)
@@ -139,7 +206,6 @@ Page({
   reply:function(e){
     if (app.globalData.hasuserinfo == false) {
       console.log("未授权")
-      var self = this;
       this.authorize(e)
     }
     else{
@@ -156,7 +222,6 @@ Page({
       this.setData({
         return_message:e.detail.value,
       })
-
   },
   //取消回复留言
   cancel: function () {

@@ -13,8 +13,9 @@
   </view>
   <view class='block-2'>    
     <view class='block-2-1'>
-    <view class='block-2-1-1'>{{item_info.title}}</view>
-    <image class='block-2-1-2' src='/images/mycode.png' bindtap='showcode'/>
+      <view class='block-2-1-1'>{{item_info.title}}</view>
+      <image class='block-2-1-2' src='/images/mycode.png' bindtap='showcode'/>
+      <button style='line-height:80rpx;font-size:35rpx;width:15%;text-align:center;padding:0;border:none' plain='true' open-type='getUserInfo' bindgetuserinfo='like'>收藏</button>
     </view>
     <view class='block-2-2'>
     <view class='block-2-2-1'><text class='price'>￥{{item_info.price}}</text></view>
